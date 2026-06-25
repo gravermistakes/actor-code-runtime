@@ -1,0 +1,36 @@
+# Shoggoth Foundry — Phase 1 proof
+#
+# Demonstrates the thesis: wiring the ruv-swarm neural swarm into the Archon
+# orchestrator requires ONE config file (./mcp.json) and ZERO code changes.
+#
+# The `mcp:` field (packages/workflows/src/schemas/dag-node.ts:146) points Archon at
+# ./mcp.json. At execution, loadMcpConfig (packages/providers/src/claude/provider.ts:408)
+# loads the ruv-swarm MCP server and auto-grants the node `mcp__ruv-swarm__*` tools.
+#
+# Run from this directory:
+#   bun run cli workflow run factory --cwd . "smoke test the swarm bridge"
+name: factory
+description: "Phase-1 proof — Archon consumes ruv-swarm's MCP tools with no code changes."
+provider: claude
+model: sonnet  # non-haiku: MCP tool-search is unsupported on haiku
+
+nodes:
+  # 1. Call a ruv-swarm MCP tool through Archon. Proves the bus works end to end.
+  - id: bridge
+    mcp: ./mcp.json
+    prompt: >
+      Using the ruv-swarm MCP tools available to you (mcp__ruv-swarm__*), initialize a
+      small mesh swarm and list the agent types and neural capabilities it reports.
+      Summarize what the swarm exposes in 3-5 bullet points.
+    idle_timeout: 120000
+
+  # 2. Assert the bridge produced output — fails loudly if the MCP server never responded.
+  - id: assert
+    bash: |
+      output="$bridge.output"
+      if [ -z "$output" ]; then
+        echo "FAIL: bridge node returned empty output — MCP bridge did not work"
+        exit 1
+      fi
+      echo "PASS: ruv-swarm MCP bridge responded through Archon"
+    depends_on: [bridge]
