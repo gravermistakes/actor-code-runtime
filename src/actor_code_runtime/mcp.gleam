@@ -9,7 +9,6 @@
 //// Phase-2 TODO using the resolved gleam_json decoder API.
 
 import actor_code_runtime/json.{type Json}
-import actor_code_runtime/runtime
 import actor_code_runtime/tools
 import gleam/string
 
@@ -81,12 +80,17 @@ fn call_tool_result(line: String) -> Json {
     Ok(t) -> t
     Error(_) -> tools.RunCode
   }
-  let result = runtime.run("", runtime.default_limits())
-  let text = tools.name(tool) <> ": " <> runtime.summary(result)
+  // The execution engine (runtime.run) is implemented and tested; wiring the
+  // decoded request parameters (code / command / diff) into it is the next
+  // increment, so this acknowledges the tool rather than executing empty input.
+  let text =
+    "actor-code-runtime recognizes "
+    <> tools.name(tool)
+    <> "; request-parameter decoding is the next increment."
   ok(
     json.object([
       #("content", json.array([text_content(text)], fn(content) { content })),
-      #("isError", json.bool(runtime.is_error(result))),
+      #("isError", json.bool(False)),
     ]),
   )
 }

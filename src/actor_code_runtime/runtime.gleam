@@ -46,20 +46,43 @@ pub fn is_error(result: ExecResult) -> Bool {
   }
 }
 
-/// Run untrusted code inside a supervised, resource-capped BEAM actor.
+@external(erlang, "acr_ffi", "run_command")
+fn run_command(
+  command: String,
+  timeout_ms: Int,
+) -> Result(#(Int, String, Int), Int)
+
+/// Run untrusted code as an OS subprocess under `/bin/sh -c`, bounded by a hard
+/// wall-clock deadline (`limits.wall_clock_ms`). Combined stdout+stderr is
+/// captured and the exit status is mapped to a `Verdict`.
 ///
-/// NOTE (Phase 2 — scaffold): the real implementation spawns a process with
-/// `spawn_opt`/`max_heap_size`, a wall-clock timeout, and a restricted
-/// environment, then collects stdout/stderr. This stub exercises the contract
-/// and types without yet executing anything. Tracked in docs/ROADMAP.md Phase 2.
-pub fn run(_code: String, _limits: Limits) -> ExecResult {
-  ExecResult(
-    verdict: Errored,
-    stdout: "",
-    stderr: "actor-code-runtime: execution not yet implemented (Phase 2 scaffold)",
-    exit_code: -1,
-    duration_ms: 0,
-  )
+/// Isolation today is the timeout-bounded subprocess. Stronger per-run
+/// sandboxing (cgroups / seccomp / container, plus BEAM `max_heap_size` for
+/// in-VM evaluation) is tracked in docs/ROADMAP.md Phase 2.
+pub fn run(code: String, limits: Limits) -> ExecResult {
+  case run_command(code, limits.wall_clock_ms) {
+    Ok(#(exit_code, output, duration_ms)) ->
+      ExecResult(
+        verdict: case exit_code {
+          0 -> Passed
+          _ -> Failed
+        },
+        stdout: output,
+        stderr: "",
+        exit_code: exit_code,
+        duration_ms: duration_ms,
+      )
+    Error(duration_ms) ->
+      ExecResult(
+        verdict: TimedOut,
+        stdout: "",
+        stderr: "wall-clock timeout exceeded ("
+          <> int.to_string(limits.wall_clock_ms)
+          <> "ms)",
+        exit_code: -1,
+        duration_ms: duration_ms,
+      )
+  }
 }
 
 pub fn summary(result: ExecResult) -> String {
