@@ -23,7 +23,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ done
   `factory.workflow.yaml`, and a walkthrough in its
   [`README`](../examples/phase-1/README.md).
 
-## Phase 2 — Give the factory a body: actor-code-runtime as the untrusted executor  ☐
+## Phase 2 — Give the factory a body: actor-code-runtime as the untrusted executor  ◐
 
 - **Repos:** actor-code-runtime, Archon (`validate` node), advanced_evolution.
 - **Seam:** Define actor-code-runtime's contract as an **MCP server** with tools `run_code`,
@@ -32,6 +32,16 @@ Status legend: ☐ not started · ◐ in progress · ☑ done
   advanced_evolution's `GitBasedOrganism.build_repo()` → submit candidate → receive fitness.
 - **Effort:** Medium — this is where the first real new code lives (the runtime engine, in Gleam
   per [DECISIONS D4](DECISIONS.md#d4--gleam-is-the-convergence-language)).
+- **Done so far:** A compiling, tested Gleam MCP server — `src/actor_code_runtime/`
+  (`json`, `tools`, `runtime`, `mcp`) + a stdio entry point and Erlang FFI. `gleam test` passes
+  and the server answers `initialize` / `tools/list` / `tools/call` over JSON-RPC. **`runtime.run/2`
+  now really executes code** as an OS subprocess under `/bin/sh -c` with a hard wall-clock
+  deadline, capturing combined output + exit status and mapping it to a verdict
+  (`passed`/`failed`/`timed_out`); tests cover all three.
+- **Next increments:** (1) decode JSON-RPC request params (`id`, `code`/`command`/`diff`) and feed
+  them into `runtime.run`; (2) stronger per-run isolation — cgroups/seccomp/container and BEAM
+  `max_heap_size` for in-VM evaluation; (3) wire Archon's `validate` node + advanced_evolution's
+  evaluator to call this server.
 - **Unlocks:** Safe execution of generated/candidate code; the substrate that makes evolution +
   validation trustworthy.
 

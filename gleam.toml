@@ -1,0 +1,11 @@
+name = "actor_code_runtime"
+version = "0.1.0"
+description = "Shoggoth Foundry execution substrate — an isolated, resource-capped runtime for untrusted agent-generated code, exposed as an MCP server."
+licences = ["MIT"]
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
