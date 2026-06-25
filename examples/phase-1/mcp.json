@@ -1,0 +1,6 @@
+{
+  "ruv-swarm": {
+    "command": "npx",
+    "args": ["ruv-swarm", "mcp", "start"]
+  }
+}
