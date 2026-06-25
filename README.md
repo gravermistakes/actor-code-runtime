@@ -91,5 +91,15 @@ modular, files small, and no hard-coded secrets.
 
 ## Status
 
-Thesis + Phase-1 proof. The runtime engine is **not yet built** — this pass is documentation
-plus a config-only proof-of-concept. See the roadmap for what comes next.
+Thesis + Phase-1 proof + **Phase-2 scaffold in progress**. The execution substrate now has a
+compiling, tested Gleam MCP server (`src/actor_code_runtime/`, `gleam test` green) answering
+`initialize` / `tools/list` / `tools/call`. The sandboxed BEAM-process execution in
+`runtime.run/2` is the remaining stub. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+### Build & test
+
+```bash
+gleam deps download
+gleam test
+echo '{"method":"tools/list"}' | gleam run   # stdio MCP server
+```
